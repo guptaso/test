@@ -1,5 +1,5 @@
 /* PreCondition:  User Clicks "Clear Fields" button
- * PostCondition: all input fields are reset
+ * PostCondition: all input fields resets
  */
 function clearFormFunc() {
   var inputs = document.getElementsByTagName('input');
@@ -19,60 +19,80 @@ function clearFormFunc() {
  * PostCondition: All fields have some type of input
  */
 function checkFieldsFunc() {
+  // Gets Input values
+  var stimInputs = document.getElementById("sq_one").value;
+  var resInputs = document.getElementById("sq_two").value;
+  var resRadio = document.getElementById("responce_no").checked;
+  var ampInputs = document.getElementById("number").value;
+  var dirInputs = document.getElementsByName("direction");
+  var optDirInputs = document.getElementsByName("optional-dir");
+  var table = document.getElementById("FinalTable");
+  var box = document.getElementsByName("ignoreBox");
+
+  // Checks input recieved for: Stimtrode, Amplitude, Direction
   // Required: Stimtrode
   var emptyStimitrode = false;
-  var stimInputs = document.getElementById("sq_one").value;
   if (!stimInputs) {
     emptyStimitrode = true;
   }
-
-  // Required: Response Electron
-  var emptyResponce = false;
-  var resInputs = document.getElementById("sq_two").value;
-  if (!resInputs) {
-    emptyResponce = true;
-  }
-
   // Required: Amplitude
   var emptyAmplitude = false;
-  var ampInputs = document.getElementById("number").value;
   if (!ampInputs) {
     emptyAmplitude = true;
   }
-
-  // Required: Direction
+  // Required: Response (either input or checked)
+  var emptyResponce = false;
+  if (!resInputs && !resRadio) {
+    emptyResponce = true;
+  }
+  // Required: Direction (either "direction" or "optional-dir")
+  var dir;
   var notEmptyDirectron = true;
-  var dirInputs = document.getElementsByName("direction");
   for (var i = 0; i < dirInputs.length; i++) {
     if (dirInputs[i].checked) {
+      dir = dirInputs[i].value;
       notEmptyDirectron = false;
     }
   }
+  var notEmptyOptDir = true;
+  for (var i = 0; i < optDirInputs.length; i++) {
+    if (optDirInputs[i].checked) {
+      dir = optDirInputs[i].value;
+      notEmptyOptDir = false;
+    }
+  }
 
+  // If any required field missing, alert User
   if (emptyStimitrode) {
     alert("missing Stimtrode input");
-  }
-  else if (emptyResponce) {
-    alert("missing Response input")
   }
   else if (emptyAmplitude) {
     alert("missing Amplitude input");
   }
-  else if (notEmptyDirectron) {
-    alert("missing direction field")
+  else if (emptyResponce) {
+    alert("missing Responce Input");
+  }
+  else if (notEmptyDirectron && notEmptyOptDir) {
+    alert ("missing Direction field");
   }
   else {
-    checkInputFunc();
+    // else all required inputs are filled
+    // check whether or not to ignore the input
+    if (!notEmptyOptDir || resRadio) {
+      addRowFunc(stimInputs, resInputs, ampInputs, dir);
+      box[0].value = "K";
+      table.rows[1].style.backgroundColor = "#C0C0C0";
+    }
+    // else the value is not to be ignored
+    else {
+      checkInputFunc();
+    }
   }
-
-
-
-
-
 }
 
+
 /* PreCondition:  Called from checkFieldsFunc
- *                So, each field has some kind of input
+ *                All required field has been filled
  * PostCondition: All inputs have been verified and match requirements
                   Inputs ready to be added to FinalTable
  */
@@ -91,13 +111,13 @@ function checkFieldsFunc() {
    else {
      // Check Response Electron: Int 1- 64
      if (isNaN(document.getElementById("sq_two").value)) {
-       alert("Response Electron value should be an integer");
+       alert("Response Electrode value should be an integer");
      }
      else if (document.getElementById("sq_two").value > 64) {
-       alert("Response Electron value should be less than 65")
+       alert("Response Electrode value should be less than 65")
      }
      else if (document.getElementById("sq_two").value < 1) {
-       alert("Response Electron value should be greater than 0")
+       alert("Response Electrode value should be greater than 0")
      }
 
      else {
@@ -106,26 +126,12 @@ function checkFieldsFunc() {
          alert("Amplitude value should be a number")
        }
        else {
-         // combines optional direction into just direction
-         var options = document.getElementsByName("direction");
-         for (var i = 0; i < options.length; i++) {
-           if (options[i].checked) {
-             var c4 = options[i].value;
-             break;
+         var full_dir;
+         var directions = document.getElementsByName("direction");
+         for (var i = 0; i < directions.length; i++) {
+           if (directions[i].checked) {
+             full_dir = directions[i].value;
            }
-         }
-         var optional_options = document.getElementsByName("optional-dir");
-         for (var i = 0; i < optional_options.length; i++) {
-           if (optional_options[i].checked) {
-             var c5 = optional_options[i].value;
-             break;
-           }
-         }
-         if (c5) {
-           var full_dir = c4.concat(" (" + c5 + ")");
-         }
-         else {
-           var full_dir = c4;
          }
          addRowFunc(document.getElementById("sq_one").value, document.getElementById("sq_two").value, document.getElementById("number").value, full_dir);
        }
@@ -148,15 +154,27 @@ function addRowFunc(stimtrode, responce, amplitude, direction) {
 
   cell1.innerHTML = stimtrode;
   cell2.innerHTML = responce;
+  //cell3.innerHTML = amplitude + "   uV";
   cell3.innerHTML = amplitude;
   cell4.innerHTML = direction;
 
-  var ingoreBox = '<input id="ignoreBox" name="ignoreBox" type="radio" value="n">';
-  cell5.innerHTML = ingoreBox;
+  var ignoreBox;
+  if (direction == undefined || direction=="Above" || direction=="Below"){
+    ingoreBox = '<input id="ignoreBox" name="ignoreBox" type="radio" value="y">';
+  }
+  else {
+    ingoreBox = '<input id="ignoreBox" name="ignoreBox" type="radio" value="n">';
+  }
 
-  appendMasterCaseOneFunc(stimtrode, responce, amplitude, direction);
-  appendMasterCaseTwoFunc(stimtrode, responce, amplitude, direction);
-  appendMasterCaseThreeFunc(stimtrode, responce, amplitude, direction);
+  cell5.innerHTML = ingoreBox;
+  if (responce) {
+    if (direction=="Forward" || direction=="Reverse"){
+      appendMasterCaseOneFunc(stimtrode, responce, amplitude, direction);
+      appendMasterCaseTwoFunc(stimtrode, responce, amplitude, direction);
+      appendMasterCaseThreeFunc(stimtrode, responce, amplitude, direction);
+    }
+  }
+
   /*
   appendMasterCaseOneTableFunc();
   appendMasterCaseTwoTableFunc();
@@ -175,9 +193,15 @@ function tableBackround() {
   var box = document.getElementsByName("ignoreBox");
 
   for (i = 1; i < table.rows.length; i++) {
+    // user wants to ignore value
     if (box[i-1].value === "y") {
       table.rows[i].style.backgroundColor = "#F7CAC9";
     }
+    // invalid value for calculation
+    else if (box[i-1].value == "K") {
+      table.rows[i].style.backgroundColor = "#C0C0C0";
+    }
+    // valid input
     else {
       if (i % 2 === 0) {
         table.rows[i].style.backgroundColor = "white";
@@ -260,7 +284,6 @@ function appendMasterCaseTwoFunc(stimtrode, responce, amplitude, direction) {
   buttonBackground();
 }
 
-
 function appendMasterCaseThreeFunc(stimtrode, responce, amplitude, direction) {
  /* User enters an input / An item is unignored
    The value could either be forward or reverse
@@ -325,7 +348,6 @@ function appendMasterCaseThreeFunc(stimtrode, responce, amplitude, direction) {
   }
   buttonBackground();
 }
-
 
 function eightPath(forward_responce, reverse_responce) {
   var one, two, three, four, five, six, seven, eight
@@ -415,6 +437,7 @@ function secondTier(stimtrode, responce, amplitude, direction, stimtrode2, respo
   // checks the amp cuttoff
   //console.log("is " + amplitude + " and " + amplitude2 + " bigger than " + secondTierAmp)
   if ( (Number(amplitude) >= Number(secondTierAmp)) && (Number(amplitude2) >= Number(secondTierAmp)) ) {
+    console.log("percentage: " + secondTierPercentage);
     if (checkAmplitudePercentage(secondTierPercentage, amplitude, amplitude2)) {
       //console.log("adding " + stimtrode + " and " + stimtrode2)
       addToTierTable(2, stimtrode, responce, amplitude, direction, stimtrode2, responce2, amplitude2, direction2);
@@ -462,13 +485,19 @@ function checkAmplitudePercentage(ampPercentage, rowAmp, incomingAmp) {
   var least = biggest*percentage;
   var leastNumber = biggest-least;
   //console.log("is this number " + lowest + " bigger than the percentage cuttoff " + least)
-  if (Number(lowest) >= Number(leastNumber)) {
+  //if (Number(lowest) >= Number(leastNumber)) {
+
+  if (Number(lowest) >= Number(least)) {
     toReturn = true;
   }
   else {
     toReturn = false;
   }
-  //console.log("returning: " + toReturn)
+  console.log("lowest (should be 400): " + lowest);
+  console.log("least: (should be 495): " + leastNumber);
+  console.log("percentage (should be .99): " + percentage);
+  console.log("returning: " + toReturn)
+
   return toReturn;
 }
 
@@ -655,10 +684,16 @@ function ignore() {
   var table = document.getElementById("FinalTable");
   var case_one_table = document.getElementById("case_one_master");
   var case_two_table = document.getElementById("case_two_master");
-  // gets which box is checked
   var box = document.getElementsByName("ignoreBox");
+
+  // gets which box is checked
   for (var i = 0; i < box.length; i++) {
+    console.log(i);
     if (box[i].checked === true) {
+      // if ignore value == "K" its an ignored value so break
+      if (box[i].value == "K") {
+        break;
+      }
       // get the values of the row:
       var stimtrode = table.rows[i+1].cells[0].innerHTML;
       var responce = table.rows[i+1].cells[1].innerHTML;
@@ -742,6 +777,7 @@ function ignore() {
         displayResults(5);
         box[i].checked = false;
       }
+      break;
     }
   }
 
@@ -788,6 +824,7 @@ function ReprocessCaseOne(tableNum) {
     var amp_one = case_one.rows[i].cells[2].innerHTML;
     var amp_two = case_one.rows[i].cells[6].innerHTML;
     if (Number(amp_one) >= compare_amp && Number(amp_two) >= compare_amp) {
+      //console.log("percentage: " + percentage);
       if (checkAmplitudePercentage(percentage, amp_one, amp_two) === true) {
         addToTierTable(tableNum, case_one.rows[i].cells[0].innerHTML, case_one.rows[i].cells[1].innerHTML, case_one.rows[i].cells[2].innerHTML, case_one.rows[i].cells[3].innerHTML, case_one.rows[i].cells[4].innerHTML, case_one.rows[i].cells[5].innerHTML, case_one.rows[i].cells[6].innerHTML, case_one.rows[i].cells[7].innerHTML);
       }
@@ -1126,8 +1163,44 @@ function submitAmplitude() {
   buttonBackground();
 }
 
+function optional_dir_checkFunc(){
+  both_dir = document.getElementsByName("direction");
+  forward_check = both_dir[0].checked;
+  reverse_check = both_dir[1].checked;
+  if (forward_check == true) {
+    document.getElementsByName("direction")[0].checked = false;
+  }
+  if (reverse_check == true) {
+    document.getElementsByName("direction")[1].checked = false;
+  }
+}
+
+function direction_checkFunc() {
+  both_dir = document.getElementsByName("optional-dir");
+  above_check = both_dir[0].checked;
+  below_check = both_dir[1].checked;
+  if (above_check == true) {
+    document.getElementsByName("optional-dir")[0].checked = false;
+  }
+  if (below_check == true) {
+    document.getElementsByName("optional-dir")[1].checked = false;
+  }
+}
+
+function res_rad_check() {
+  x = document.getElementById("responce_no");
+  if (x.checked == true) {
+    document.getElementById("responce_no").checked = false;
+  }
+}
+
+function res_text_check() {
+  document.getElementById("sq_two").value="";
+}
+
 document.getElementById("firstTierResultsCase").style.display = "block";
 buttonBackground();
+
 // GLOBALS
 var firstTierAmp = 500;
 var secondTierAmp = 250;
