@@ -437,7 +437,6 @@ function secondTier(stimtrode, responce, amplitude, direction, stimtrode2, respo
   // checks the amp cuttoff
   //console.log("is " + amplitude + " and " + amplitude2 + " bigger than " + secondTierAmp)
   if ( (Number(amplitude) >= Number(secondTierAmp)) && (Number(amplitude2) >= Number(secondTierAmp)) ) {
-    console.log("percentage: " + secondTierPercentage);
     if (checkAmplitudePercentage(secondTierPercentage, amplitude, amplitude2)) {
       //console.log("adding " + stimtrode + " and " + stimtrode2)
       addToTierTable(2, stimtrode, responce, amplitude, direction, stimtrode2, responce2, amplitude2, direction2);
@@ -493,10 +492,6 @@ function checkAmplitudePercentage(ampPercentage, rowAmp, incomingAmp) {
   else {
     toReturn = false;
   }
-  console.log("lowest (should be 400): " + lowest);
-  console.log("least: (should be 495): " + leastNumber);
-  console.log("percentage (should be .99): " + percentage);
-  console.log("returning: " + toReturn)
 
   return toReturn;
 }
@@ -688,7 +683,6 @@ function ignore() {
 
   // gets which box is checked
   for (var i = 0; i < box.length; i++) {
-    console.log(i);
     if (box[i].checked === true) {
       // if ignore value == "K" its an ignored value so break
       if (box[i].value == "K") {
